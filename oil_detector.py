@@ -123,9 +123,9 @@ X_test = X_test.astype('float32') / 255.
 
 
 print("Training - Part 1 started!!")
-for i in range(15):
+for i in range(25):
 	print("epoch no. - "+str(i))
-	Detector.fit(X_train, Y_train, epochs=1, batch_size=4, verbose=1)
+	Detector.fit(X_train, Y_train, epochs=2, batch_size=4, verbose=1)
 	Detector.save_weights("part1.h5")
 # for epoch in range(1):
 #     X_train,Y_train=shuffle(X_train,Y_train)
