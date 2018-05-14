@@ -23,7 +23,7 @@ from keras.utils.np_utils import to_categorical
 # In[ ]:
 
 
-neck = applications.VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+neck = applications.VGG19(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 
 
 # In[ ]:
@@ -39,14 +39,6 @@ classify = Dense(2, activation='sigmoid')(classify)
 
 
 Detector=Model(neck.input, classify)
-Detector.load_weights("part1.h5")
-
-
-# In[ ]:
-
-
-for layers in neck.layers:
-    layers.trainable=False
 
 
 # In[ ]:
@@ -60,6 +52,19 @@ Detector.summary()
 
 Detector.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
+
+# In[ ]:
+
+
+train_datagen = ImageDataGenerator(
+        rotation_range=90,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        shear_range=0.2,
+        zoom_range=0.2, rescale=1./255,
+        horizontal_flip=True,
+        fill_mode='nearest')
+test_datagen = ImageDataGenerator(rescale = 1./255)
 
 # In[ ]:
 
@@ -97,7 +102,7 @@ print(str(len(pimgs)+len(nimgs))+" images are loaded")
 
 
 data,Label = shuffle(in_mat,out_mat, random_state=2)
-X_train,X_test,Y_train,Y_test=train_test_split(data, Label, test_size=0.00, random_state=2)
+X_train,X_test,Y_train,Y_test=train_test_split(data, Label, test_size=0.10, random_state=2)
 del data[:]
 del Label[:]
 del in_mat[:]
@@ -113,20 +118,11 @@ print("testdata = "+str(X_test.shape[0]))
 
 
 # In[ ]:
-
-
-X_train = X_train.astype('float32') / 255.
-X_test = X_test.astype('float32') / 255.
-
-
-# In[ ]:
-
-
+train_gen = train_datagen.flow(X_train, Y_train, batch_size=4)
+test_gen= test_datagen.flow(X_test , Y_test, batch_size=4)
+#datagen.fit(X_train)
 print("Training - Part 1 started!!")
-for i in range(25):
-	print("epoch no. - "+str(i))
-	Detector.fit(X_train, Y_train, epochs=2, batch_size=4, verbose=1)
-	Detector.save_weights("part1.h5")
+Detector.fit_generator(train_gen, steps_per_epoch=3000, validation_data=test_gen, validation_steps=X_test.shape[0]/4, epochs=50, verbose=1)
 # for epoch in range(1):
 #     X_train,Y_train=shuffle(X_train,Y_train)
 #     print ("Epoch is: %d\n" % epoch)
@@ -139,14 +135,14 @@ for i in range(25):
 # #         loss=binary_crossentropy(batch_train_Y,l)
 # #         print(loss)
 #         print ('epoch_num: %d batch_num: %d train loss: %f class-%f\n' % (epoch+1,batch+1,loss[0]*100,loss[1]))
-
+Detector.save_weights("new_weights.h5")
 print("PART1 - training completed for the classifier")
 
 
 # In[ ]:
 
 
-scores = Detector.evaluate(X_test, Y_test, batch_size=4, verbose=1)
+scores = Detector.evaluate(X_test, Y_test, verbose=1)
 print ("Test Error: %.2f%%" % (100-scores[1]*100))
 print ("Test Accuracy: %.2f%%" % (scores[1]*100))
 
@@ -154,51 +150,62 @@ print ("Test Accuracy: %.2f%%" % (scores[1]*100))
 # In[ ]:
 
 
-FDetector=Model(neck.input,classify)
+# FDetector=Model(neck.input,classify)
 
 
-# In[ ]:
+# # In[ ]:
 
 
-FDetector.summary()
+# i=1
+# for layers in neck.layers:
+#     layers.trainable=False
+#     if i == 20:
+#         break
+#     i+=1
 
 
-# In[ ]:
+# # In[ ]:
 
 
-FDetector.load_weights('part1.h5')
+# FDetector.summary()
 
 
-# In[ ]:
+# # In[ ]:
 
 
-FDetector.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+# FDetector.load_weights('part1.h5')
 
 
-# In[ ]:
+# # In[ ]:
 
 
-print("Training - Part 2 started")
-batch_size=1
+# FDetector.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+
+
+# # In[ ]:
+
+
+# print("Training - Part 2 started")
+# batch_size=1
 # FDetector.fit(X_train, Y_train, epochs=1, batch_size=1, verbose=1)
-# num_batches=math.ceil(len(X_train)*1.0/batch_size)
-# for epoch in range(1):
-#     X_train,Y_train=shuffle(X_train,Y_train)
-#     print ("Epoch is: %d\n" % epoch)
-#     print ("Number of batches: %d\n" % int(num_batches))
-#     for batch in range(int(num_batches-40)):
-#         batch_train_X=X_train[batch*batch_size:min((batch+1)*batch_size,len(X_train))]
-#         batch_train_Y=Y_train[batch*batch_size:min((batch+1)*batch_size,len(Y_train))]
-#         loss=FDetector.train_on_batch(batch_train_X,batch_train_Y)
-# #         l=Detector.predict(batch_train_X,verbose=0)
-# #         loss=binary_crossentropy(batch_train_Y,l)
-# #         print(loss)
-#         print ('epoch_num: %d batch_num: %d train loss: %f class-%f\n' % (epoch+1,batch+1,loss[0]*100,loss[1]))
+# # num_batches=math.ceil(len(X_train)*1.0/batch_size)
+# # for epoch in range(1):
+# #     X_train,Y_train=shuffle(X_train,Y_train)
+# #     print ("Epoch is: %d\n" % epoch)
+# #     print ("Number of batches: %d\n" % int(num_batches))
+# #     for batch in range(int(num_batches-40)):
+# #         batch_train_X=X_train[batch*batch_size:min((batch+1)*batch_size,len(X_train))]
+# #         batch_train_Y=Y_train[batch*batch_size:min((batch+1)*batch_size,len(Y_train))]
+# #         loss=FDetector.train_on_batch(batch_train_X,batch_train_Y)
+# # #         l=Detector.predict(batch_train_X,verbose=0)
+# # #         loss=binary_crossentropy(batch_train_Y,l)
+# # #         print(loss)
+# #         print ('epoch_num: %d batch_num: %d train loss: %f class-%f\n' % (epoch+1,batch+1,loss[0]*100,loss[1]))
 # FDetector.save_weights("detector.h5")
-print("PART2 - training completed for the network")
+# print("PART2 - training completed for the network")
 
 
-# In[ ]:
+# # In[ ]:
 
 
 # scores = FDetector.evaluate(X_test, Y_test, verbose=1)

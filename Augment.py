@@ -75,7 +75,7 @@ for i in range(len(pimgs)):
     j = 0
     for b in datagen.flow(x, batch_size=1,save_to_dir='data2/positive', save_prefix=pimgs[i], save_format='jpeg'):
         j += 1
-        if j > 20:
+        if j > 10:
             break # otherwise the generator would loop indefinitely
 print("Positive images augmented and saved")
 
